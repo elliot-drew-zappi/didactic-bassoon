@@ -442,19 +442,19 @@ function makeFirstComment(){
 var questionnaire;
 
 var default_questionnaire = {
-    "topic": "non-alcoholic beers",
+    "topic":"non-alcoholic beers",
     "context": "You are a helpful AI designed by marketing professionals to get information from consumers in a natural, conversational manner. Be polite at all times, and thank them for their answers and time when appropriate. Act like they are a good friend of yours. Use emojis to indicate emotional responses to what the human says to you.\n\nYou are interested in their opinions on <TOPIC>. You will ask follow up questions - but those follow up questions should be designed to get NEW information they haven't told you yet. Don't repeat questions you've already asked. You should ONLY reply with questions. ",
     "questions": [
         {
-            "question_text": "Find out if they buy non-alcoholic beers regularly. Ask relevant follow up questions to get more information based on their replies - for example, you might want to find out if they buy alcohol containing beers if they don't purchase non-alcoholic ones, or which <TOPIC> they purchase if they don't mention any brands in their answer.",
+            "question_text": "Find out if they buy <TOPIC> regularly. Ask relevant follow up questions to get more information based on their replies - for example, you might want to find out if they buy alcohol containing beers if they don't purchase non-alcoholic ones, or which <TOPIC> they purchase if they don't mention any brands in their answer.",
             "n_follow_ups": "2"
         },
         {
-            "question_text": "Depending on their previous answers:\n\n- If they said they buy non-alcoholic beers, ask them what they like about the product they buy. You could follow up by asking what you would improve about the product.\n\n- If they said they don't buy non-alcoholic beers, ask them what would convince them to buy non-alcoholic beers. Follow up with a relevant question to get more new information.",
+            "question_text": "Depending on their previous answers:\n\n- If they said they buy <TOPIC>, ask them what they like about the product they buy. You could follow up by asking what you would improve about the product.\n\n- If they said they don't buy <TOPIC>, ask them what would convince them to buy <TOPIC>. Follow up with a relevant question to get more new information.",
             "n_follow_ups": "1"
         },
         {
-            "question_text": "Ask them if a celebrity endorsement of a product would make them more likely to buy a non-alcoholic beer. Ask relevant follow up questions to get more information about their answers.",
+            "question_text": "Ask them if a celebrity endorsement of a product would make them more likely to buy <TOPIC>. Ask relevant follow up questions to get more information about their answers - for example, what celebrity?",
             "n_follow_ups": "1"
         },
         {
