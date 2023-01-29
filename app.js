@@ -454,7 +454,11 @@ var default_questionnaire = {
             "n_follow_ups": "1"
         },
         {
-            "question_text": "Ask them how the felt about the survey experience on a scale from 1 to 10, 1 being bad, 10 being excellent. Follow up with a question asking why they felt the way they did, or how the survey could be improved.",
+            "question_text": "Ask them if a celebrity endorsement of a product would make them more likely to buy a non-alcoholic beer. Ask relevant follow up questions to get more information about their answers.",
+            "n_follow_ups": "1"
+        },
+        {
+            "question_text": "Now you have to ask them how the felt about this survey on a scale from 1 to 10, 1 being bad, 10 being excellent. Follow up with a question asking why they felt the way they did, or how the survey could be improved.",
             "n_follow_ups": "1"
         }
     ]
