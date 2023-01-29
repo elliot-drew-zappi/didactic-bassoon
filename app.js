@@ -379,8 +379,8 @@ async function askAI(){
             }else{
                 response_text = `${result.choices[0].text}`
                 cost = calculateCost(result.usage.total_tokens)
-                session_cost = session_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${session_cost.toFixed(3)}`
+                conversation_cost = conversation_cost+cost
+                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
                 follow_up_no++
                 newAIComment(response_text)
                 ai_turn = false
@@ -405,7 +405,7 @@ async function clearConvo(){
     // keep track of conversation cost
     conversation_cost = 0
     survey_active = true
-    document.getElementById('costbox').innerHTML = `conversation cost: $${session_cost.toFixed(3)}`
+    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
     return
 }
 
@@ -421,8 +421,8 @@ function makeFirstComment(){
             }else{
                 response_text = `👋 Hi there! ${result.choices[0].text}`
                 cost = calculateCost(result.usage.total_tokens)
-                session_cost = session_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${session_cost.toFixed(3)}`
+                conversation_cost = conversation_cost+cost
+                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
                 ai_turn = true
                 newAIComment(response_text)
                 ai_turn = false
@@ -476,7 +476,6 @@ var follow_up_no = 0
 var max_follow_up_no = 0
 // keep track of conversation cost
 var conversation_cost = 0
-var session_cost = 0
 
 // whose turn is it?
 var ai_turn = true
@@ -557,6 +556,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //first comment in convo
     makeFirstComment()
     overlay.style.display = 'none'
-    document.getElementById('costbox').innerHTML = `conversation cost: $${session_cost.toFixed(3)}`
+    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
     
 });
