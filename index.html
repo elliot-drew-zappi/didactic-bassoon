@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Conversational AI Survey Experiment Tool - Elliot Drew</title>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.1/dist/css/materialize.min.css">   
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+      .material-symbols-rounded {
+        font-variation-settings:'FILL' 0,'wght' 600,'GRAD' 200,'opsz' 48;
+        font-size: 40px;
+      }
+      .loader-container {
+          width: 100%;
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          position: fixed;
+          background: #000;
+          opacity: 0.4;
+          z-index: 100;
+      }
+      .spinner {
+          width: 64px;
+          height: 64px;
+          border: 8px solid;
+          border-color: #3d5af1 transparent #3d5af1 transparent;
+          border-radius: 50%;
+          animation: spin-anim 1.2s linear infinite;
+      }
+
+      @keyframes spin-anim {
+          0% {
+              transform: rotate(0deg);
+          }
+          100% {
+              transform: rotate(360deg);
+          }
+      }
+
+      .question_block {
+        background-color: ghostwhite;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 25px;
+      }
+      </style>
+  </head>
+  <body>
+    <div id="overlay" class="loader-container">
+      <div class="spinner"></div>
+    </div>
+    <div class="section">
+        <div class="container">
+            <br><br>
+            <h3 class="header center-align">Conversational AI Survey Tool</h3>
+        </div>
+    </div>
+    <div class="section">
+        <div class="container">
+            <div class="row center-align">
+              <ul id="tabs-swipe" class="tabs">
+                <li class="tab col m4"><a href="#test-swipe-1">Conversation</a></li>
+                <li class="tab col m4"><a class="active" href="#test-swipe-2">Configuration</a></li>
+                <li class="tab col m4"><a href="#test-swipe-3">Help</a></li>
+              </ul>
+              <div class="row center-align">
+                
+                <div id="test-swipe-1" class="col m12 center-align">
+                  <div class="row center-align">
+                  <div class="col m3"></div> 
+                  <div id="chatlog" class="col m6" style="height:400px; display:flex;flex-direction:column-reverse;overflow-y:scroll;">
+                    
+                      <!-- Conversation gets injected here -->
+                    
+                    
+                  </div> 
+                  <div class="col m3"></div> 
+                  </div>
+                  <div class="row">
+                    <div class="col m3"></div>
+                    <div id='chatbox_container' class="input-field col m6">
+                      <input id="chatbox" type="text" class="validate"  autocomplete="off" data-length="120">
+                      <label for="chatbox">First Name</label>
+                      <i id="submit-message" class="material-icons prefix">send</i>
+                    </div>
+                    <div class="col m3"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col s4"></div>
+                    <div id="costbox" class="col s4"></div>
+                    <div class="col s4"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                    <div class="col m4">
+                      <a id ='reset-button' class="waves-effect waves-light red btn"><i class="material-icons left">update</i>Reset Conversation</a>
+                    </div>
+                    <div class="col m4">
+                      <a id ='download-convo-button' class="waves-effect waves-light btn"><i class="material-icons left">download</i>Download Conversation</a>
+                    </div>
+                    <div class="col m2"></div>
+                  </div>
+                  
+                </div>
+                <div id="test-swipe-2" class="col m12">
+                  <div class="row">
+                    <div class="col m2"></div>
+                      <div class="input-field col m8">
+                        <textarea style="color: transparent;text-shadow: 0 0 8px rgba(0,0,0,0.5);" id="api-key" class="materialize-textarea"></textarea>
+                        <label for="api-key">OpenAI API key<span style="color:rgb(253, 93, 93)"> (required!)</span>:</label>
+                      </div>
+                    <div class="col m2"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                      <div class="input-field col m8">
+                        <textarea style="color: transparent;text-shadow: 0 0 8px rgba(0,0,0,0.5);" id="org-key" class="materialize-textarea"></textarea>
+                        <label for="org-key">OpenAI Org key<span style="color:rgb(253, 93, 93)"> (required!)</span>:</label>
+                      </div>
+                    <div class="col m2"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                      <div class="input-field col m8">
+                        <textarea id="topic" class="materialize-textarea">low or no alcohol drinks</textarea>
+                        <label for="topic">Topic:</label>
+                      </div>
+                    <div class="col m2"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                    <div class="input-field col m8">
+                      <textarea id="context" class="materialize-textarea">You are a helpful AI designed by marketing professionals to get information from consumers in a natural, conversational manner. Be polite at all times, and thank them for their answers and time when appropriate. Act like they are a good friend of yours. You are interested in their opinions on <TOPIC>. If it makes sense to do so, ask follow up questions to get more information - you are interested in why they say and feel the things they do. Don't repeat questions you've already asked. If the user starts to appear angry, apologise and ask them if they want to continue the survey. If they say they want to end the survey warn them that they won't be paid - if they still want the survey to end, say goodbye and write "<END SURVEY>". Otherwise ask another question.</textarea>
+                      <label for="context">Context:</label>
+                    </div>
+                    <div class="col m2"></div>
+                  </div>
+                  <div id="questions">
+                    <div class="question_block">
+                      <h6>Question 1</h6>
+                      <div class="row">
+                        <div class="col m2"></div>
+                        <div class="input-field col m8">
+                          <textarea id="question-1-text" class="materialize-textarea">what <TOPIC> products/brands do they know about</textarea>
+                          <label for="question-1">Find out:</label>
+                        </div>
+                        <div class="col m2"></div>
+                      </div>
+                      <div class="row">
+                        <div class="col m2"></div>
+                        <div class="col m4"><p style="padding: 3%;text-align:right">Maximum follow up questions:</p></div>
+                        <div class="input-field col m4">
+                          <select class="browser-default" id="question-1-n_followups">
+                            <option value="1">1</option>
+                            <option value="2" selected="true">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                          </select>
+                          
+                        </div>
+                        <div class="col m2"></div>
+                      </div>
+                    </div>
+                    <div class="question_block">
+                      <h6>Question 2</h6>
+                      <div class="row">
+                        <div class="col m2"></div>
+                        <div class="input-field col m8">
+                          <textarea id="question-2-text" class="materialize-textarea">how much they like the products they mentioned on a scale from 1 to 5 - 1 being the worst, 5 being the best</textarea>
+                          <label for="question-2">Find out:</label>
+                        </div>
+                        <div class="col m2"></div>
+                      </div>
+                      <div class="row">
+                        <div class="col m2"></div>
+                        <div class="col m4"><p style="padding: 3%;text-align:right">Maximum follow up questions:</p></div>
+                        <div class="input-field col m4">
+                          <select class="browser-default" id="question-2-n_followups">
+                            <option value="1">1</option>
+                            <option value="2" selected="true">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                          </select>
+                          
+                        </div>
+                        <div class="col m2"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                    <div class="col m2">
+                      <a class="btn-floating btn-large waves-effect waves-light red"><i id="remove-q-button" class="material-icons">remove</i></a>
+                    </div>
+                    <div class="col m4">
+                      <div class="file-field input-field">
+                        <div class="btn">
+                          <span>Choose file</span>
+                          <input id="fileInput" type="file">
+                        </div>
+                        <div class="file-path-wrapper">
+                          <input class="file-path validate" type="text">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col m2">
+                      <a class="btn-floating btn-large waves-effect waves-light red"><i id="add-q-button" class="material-icons">add</i></a>
+                    </div>
+                    <div class="col m2"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                    <div class="col m4">
+                      <a id="update-config" class="waves-effect waves-light btn"><i class="material-icons left">update</i>update config</a>
+                    </div>
+                    <div class="col m4">  
+                      <a id="download-config" class="waves-effect waves-light btn"><i class="material-icons left">download</i>download config</a>
+                    </div>
+                    <div class="col m2"></div>
+                    
+                  </div>
+                  
+                </div>
+                <div id="test-swipe-3" class="col m12 center-align">
+                  <div class="left-align" style="width:60%;margin: auto;"">
+                    <h5 class="center-align">The Configuration Panel</h5>
+                    <h6>API keys</h6>
+                    <p>
+                      To run the tool, you need to copy your OpenAI API key and your OpenAI organisation key into the top boxes provided.
+                      This will allow the tool to communicate with GPT and create the responses required for the chat to work.
+                    </p>
+                    <p>
+                      You can find/create your API key <a href="https://beta.openai.com/account/api-keys">here</a> and organisation key <a href="https://beta.openai.com/account/org-settings">here</a>.
+                      You will need to be signed in/have an account set up to do this.
+                    </p>
+                    <p>
+                      You have to put this in each time you load the page - there is no server/backend to this tool, everything is done client-side (i.e. on your computer)
+                      using Javascript. This means there is no secure way to store this information between sessions - if you reload the page the keys will be gone.
+                    </p>
+                    <h6>Topic and Context</h6>
+                    <p>
+                      Next, there are textboxes that let you set up various parts of the prompt that drive the chatbot.
+                    </p>
+                    <p>
+                      The "Topic" is fairly self explanatory - its the thing you want to talk about in the survey. You can use a special keyword <b>&lt;TOPIC&gt;</b> in other bits of text (like the context or questions you will see later)
+                      which will be replaced with the text you write in the topic box when the prompt is sent to OpenAI.
+                    </p>
+                    <p>
+                      The context is a bit more complicated. This can be used to setup things like the personality and behaviour of the AI, the very high level aim/information it should be going for etc.
+                      For example, it would be sensible to tell it that it is a marketing AI for conversation surveys, or that it should only answer with questions, or it should be friendly and helpful.
+                    </p>
+                    <h6>Questions</h6>
+                    <p>
+                      You can define any number of Questions for the survey. A question definition consists of a short prompt e.g.
+                    </p>
+                    <code>Ask them how the felt about the survey experience on a scale from 1 to 10, 1 being bad, 10 being excellent. Follow up with a question asking why they felt the way they did, or how the survey could be improved.</code>
+                    <p>
+                      and selection of the number of follow up questions allowed e.g. if 2 follow ups were selected, 3 total questions would be asked for that block.
+                    </p>
+                    <p>
+                      You can use the question prompt or the context to modify the behaviour of the bot when it comes to follow ups - specifically ask for certain things to be said (like in the example above), or give it
+                      loads of freedom to interrogate the respondent.
+                    </p>
+                    <p>You can add and remove questions using the big red + and - buttons at the bottom of the page. At least one question is required.</p>
+                    <p>
+                      You can download configs as JSON for use later on. You can upload these JSON files using the choose file button as well, to restore previous questionnaires.
+                    </p>
+                    <p>
+                      I also use something called localStorage to store the config setup created when the update config button was last pressed. This should be automatically
+                      loaded when you next open the site.
+                    </p>
+                    <p>
+                      To get you started, I have added a few example questions, so you can have an idea of how the different parts work. It includes scale question as well - GPT is very good at
+                      intepreting and following up on these sorts of questions.
+                    </p>
+                    <p>
+                      Once you are happy with the config setup, click the update config button to start the chat. You should be automatically switched to the conversation tab.
+                    </p>
+                    <h5 class="center-align">The Conversation Panel</h5>
+                    <p>
+                      This has been designed to work like most chat apps - you are the respondent and your messages will appear in dark-grey boxes on the right hand side, the AI chatbot's 
+                      will appear on the left in orange boxes.
+                    </p>
+                    <p>
+                      <b>PLEASE DON'T SAY ANYTHING OFFENSIVE IN THE CHAT - I have not yet put in a call to the moderation pipeline, and OpenAI isn't a huge fan of profanity or
+                      offensive language, and its possible you will get yourself or your org in a pickle.
+                      </b>
+                    </p>
+                    <p>
+                      If you haven't entered your API info, or have entered them incorrectly, a message will be shown in the chat and you won't be able to type anything in the chatbox.
+                    </p>
+                    <p>
+                      The AI will start the conversation, and you can then type in a reply and hit enter or click the send button. The AI will then think about a response and reply, at which point the process
+                      will repeat until all questions are exhausted and the conversation is wrapped up by the AI.
+                    </p>
+                    <p>
+                      You can reset the conversation at anytime. You can also download the conversation at any time as a text file.
+                    </p>
+                  </div>
+                </div>
+              </div>           
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.1/dist/js/materialize.min.js"></script>   
+    
+  <script>
+
+    var instance = M.Tabs.init(document.getElementById('tabs-swipe'));
+  </script>
+  <script src="app.js"></script>
+  </body>
+</html>
