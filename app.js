@@ -420,6 +420,7 @@ function makeFirstComment(){
                 ai_turn = false
             }else{
                 response_text = `👋 Hi there! ${result.choices[0].text}`
+                cost = calculateCost(result.usage.total_tokens)
                 session_cost = session_cost+cost
                 document.getElementById('costbox').innerHTML = `conversation cost: $${session_cost.toFixed(3)}`
                 ai_turn = true
