@@ -251,7 +251,7 @@ async function generateCompletions(
         apiKey,
         org_key,
         prompt,
-        temperature = 0.7,
+        temperature = 0.4,
         maxTokens = 120,
         topP = 1,
         frequencyPenalty = 0,
