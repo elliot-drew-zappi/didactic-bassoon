@@ -167,6 +167,8 @@ const context = document.getElementById('context')
 function getQuestionInfo(){
     let questionnaire = {}
     // get the topic
+    questionnaire.model = chosen_model
+    questionnaire.temperature = chosen_temperature
     questionnaire.topic = topic.value
     questionnaire.context = context.value
     let question_blocks = document.getElementsByClassName("question_block");
