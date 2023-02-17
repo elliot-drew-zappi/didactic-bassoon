@@ -129,6 +129,31 @@
                   <div class="row">
                     <div class="col m2"></div>
                       <div class="input-field col m8">
+                        <i class="material-icons prefix">device_thermostat</i>
+                        <input id="temperature-choice" type="number" value="0.4" min="0.0" max="1.0", step="0.01">
+                        <label for="temperature-choice">Temperature (0.0 - 1.0)</label>
+                      </div>
+                      
+                    <div class="col m2"></div>
+
+                  </div>
+                  <div class="row">
+                    <div class="col m2"></div>
+                    <div class="col m2"><p style="padding: 3%;text-align:right">Choose OpenAI model:</p></div>
+                    <div class="input-field col m6">
+                      <select class="browser-default" id="model-choice">
+                        <option value="text-davinci-003" selected="true">Davinci</option>
+                        <option value="text-curie-001">Curie</option>
+                      </select>
+                      
+                    </div>
+                    <div class="col m2"></div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col m2"></div>
+                      <div class="input-field col m8">
+                        
                         <textarea id="topic" class="materialize-textarea">low or no alcohol drinks</textarea>
                         <label for="topic">Topic:</label>
                       </div>
@@ -143,60 +168,7 @@
                     <div class="col m2"></div>
                   </div>
                   <div id="questions">
-                    <div class="question_block">
-                      <h6>Question 1</h6>
-                      <div class="row">
-                        <div class="col m2"></div>
-                        <div class="input-field col m8">
-                          <textarea id="question-1-text" class="materialize-textarea">what <TOPIC> products/brands do they know about</textarea>
-                          <label for="question-1">Find out:</label>
-                        </div>
-                        <div class="col m2"></div>
-                      </div>
-                      <div class="row">
-                        <div class="col m2"></div>
-                        <div class="col m4"><p style="padding: 3%;text-align:right">Maximum follow up questions:</p></div>
-                        <div class="input-field col m4">
-                          <select class="browser-default" id="question-1-n_followups">
-                            <option value="1">1</option>
-                            <option value="2" selected="true">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                          </select>
-                          
-                        </div>
-                        <div class="col m2"></div>
-                      </div>
-                    </div>
-                    <div class="question_block">
-                      <h6>Question 2</h6>
-                      <div class="row">
-                        <div class="col m2"></div>
-                        <div class="input-field col m8">
-                          <textarea id="question-2-text" class="materialize-textarea">how much they like the products they mentioned on a scale from 1 to 5 - 1 being the worst, 5 being the best</textarea>
-                          <label for="question-2">Find out:</label>
-                        </div>
-                        <div class="col m2"></div>
-                      </div>
-                      <div class="row">
-                        <div class="col m2"></div>
-                        <div class="col m4"><p style="padding: 3%;text-align:right">Maximum follow up questions:</p></div>
-                        <div class="input-field col m4">
-                          <select class="browser-default" id="question-2-n_followups">
-                            <option value="1">1</option>
-                            <option value="2" selected="true">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                          </select>
-                          
-                        </div>
-                        <div class="col m2"></div>
-                      </div>
-                    </div>
+                    
                   </div>
                   <div class="row">
                     <div class="col m2"></div>
@@ -248,6 +220,19 @@
                       You have to put this in each time you load the page - there is no server/backend to this tool, everything is done client-side (i.e. on your computer)
                       using Javascript. This means there is no secure way to store this information between sessions - if you reload the page the keys will be gone.
                     </p>
+                    <h6>Temperature and Model Choice</h6>
+                    <p>
+                      Temperature allows you to control the diversity of tokens/words that the model generates. A higher temperature means more diverse text will be generated, and vice versa.
+                      High temperatures might lead to more interesting conversations, but they also run the risk of going off topic or changing the intent of a question that gets asked. The default is 0.4, which
+                      is fairly conservative - tests in the region 0.2 - 0.7 will probably be interesting and useful. The value has to be between 0 and 1.
+                    </p>
+                    <p>
+                      You can also choose the model used - Davinci is the most powerful. It is 0.02 cents per 1000 tokens, or approximately 750 words. Curie is a little less capable, and costs 0.002 cents per 1000 tokens.
+                      Curie will be faster then Davinci. But Davinci will follow instructions better and be able to handle more complex follow up generations and conversation layouts.
+                    </p>
+                    <p>
+                      If you think about the low to high autonomy spectrum for the AI, Curie is suitable for the low end, while Davinci is suitable for the high end.
+                    </p>
                     <h6>Topic and Context</h6>
                     <p>
                       Next, there are textboxes that let you set up various parts of the prompt that drive the chatbot.
@@ -270,7 +255,7 @@
                     </p>
                     <p>
                       You can use the question prompt or the context to modify the behaviour of the bot when it comes to follow ups - specifically ask for certain things to be said (like in the example above), or give it
-                      loads of freedom to interrogate the respondent.
+                      loads of freedom to interrogate the respondent. If you don't want any follow ups, set this to 0.
                     </p>
                     <p>You can add and remove questions using the big red + and - buttons at the bottom of the page. At least one question is required.</p>
                     <p>

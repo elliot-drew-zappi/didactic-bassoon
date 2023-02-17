@@ -62,7 +62,7 @@ function createQuestionBlock(question_number) {
     select.id = "question-" + question_number + "-n_followups";
     col5.appendChild(select);
   
-    for (var i = 1; i <= 6; i++) {
+    for (var i = 0; i <= 6; i++) {
       var option = document.createElement("option");
       option.value = i;
       option.innerHTML = i;
@@ -90,6 +90,10 @@ function removeQuestionBlock() {
 }
 
 function loadQuestionnaire(questionnaire){
+    model_box.value = questionnaire.model  !== undefined ? questionnaire.model  : chosen_model;
+    chosen_model = model_box.value
+    temperature_box.value = questionnaire.temperature  !== undefined ? questionnaire.temperature  : chosen_temperature;
+    chosen_temperature = temperature_box.value
     // topic first
     topic.value = questionnaire.topic
     // context
@@ -104,7 +108,7 @@ function loadQuestionnaire(questionnaire){
         document.getElementById("questions").appendChild(question_block);
 
         document.getElementById(`question-${question_number}-text`).value = questionnaire.questions[i].question_text
-        if(questionnaire.questions[i].n_follow_ups > 0 & questionnaire.questions[i].n_follow_ups < 7){
+        if(questionnaire.questions[i].n_follow_ups >= 0 & questionnaire.questions[i].n_follow_ups < 7){
             document.getElementById(`question-${question_number}-n_followups`).value = questionnaire.questions[i].n_follow_ups
         }
     }
@@ -251,7 +255,6 @@ async function generateCompletions(
         apiKey,
         org_key,
         prompt,
-        temperature = 0.4,
         maxTokens = 120,
         topP = 1,
         frequencyPenalty = 0,
@@ -267,9 +270,9 @@ async function generateCompletions(
         "OpenAI-Organization": org_key,
       },
       body: JSON.stringify({
-        model: "text-davinci-003",
+        model: chosen_model,
         prompt: prompt,
-        temperature: temperature,
+        temperature: chosen_temperature,
         max_tokens: maxTokens,
         top_p: topP,
         frequency_penalty: frequencyPenalty,
@@ -426,7 +429,7 @@ function makeFirstComment(){
                 ai_turn = true
                 newAIComment(response_text)
                 ai_turn = false
-                conversation.push(`AI: ${response_text}`)
+                //conversation.push(`AI: ${response_text}`)
             }
             
         })
@@ -438,6 +441,11 @@ function makeFirstComment(){
     //overlay.style.display = 'none'
     
 }
+
+var chosen_temperature = 0.4;
+var chosen_model = "text-davinci-003";
+
+var model_choices = ["text-davinci-003", "text-curie-001"]
 
 var questionnaire;
 
@@ -489,7 +497,26 @@ var chatbox;
 var overlay;
 var p;
 
+var temperature_box = document.getElementById("temperature-choice")
+var model_box = document.getElementById("model-choice")
+
 document.addEventListener("DOMContentLoaded", function(event) {
+
+    temperature_box.addEventListener("change", function(e){
+        let tmp_temp = e.target.value;
+        if (tmp_temp < 0.0){
+            tmp_temp == 0.0;
+            temperature_box.value = 0.0
+        }else if(tmp_temp > 1.0){
+            tmp_temp = 1.0;
+            temperature_box.value = 1.0
+        }
+        chosen_temperature = parseFloat(tmp_temp);
+    })
+
+    model_box.addEventListener("change", function(e){
+        chosen_model = model_box.value;
+    })
     document.getElementById('chatbox').disabled = true
     // set up a few event listeners
     document.getElementById('add-q-button').addEventListener("click", function(){addQuestionBlock()}, false)
@@ -559,3 +586,4 @@ document.addEventListener("DOMContentLoaded", function(event) {
     document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
     
 });
+
