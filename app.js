@@ -1,5 +1,27 @@
 // shit version of components
 
+// create a conversation object. List of strings
+var conversation = []
+// keep track of question number + follow ups
+var q_no = 1
+var follow_up_no = 0
+console.log(follow_up_no)
+var max_follow_up_no = 0
+// keep track of conversation cost
+var conversation_cost = 0
+
+// whose turn is it?
+var ai_turn = true
+// false once survey ends
+var survey_active = true
+
+var api_key = "";
+var org_key = "";
+
+var chatbox;
+var overlay;
+var p;
+
 // question block stuff
 
 function createQuestionBlock(question_number) {
@@ -31,11 +53,37 @@ function createQuestionBlock(question_number) {
     label.setAttribute("for", "question-" + question_number + "-text");
     label.innerHTML = "Find out:";
     input_field.appendChild(label);
-  
+
     var col2 = document.createElement("div");
     col2.className = "col s2";
     row1.appendChild(col2);
+
+    var row_fup = document.createElement("div");
+    row_fup.className = "row";
+    question_block.appendChild(row_fup);
+
+    var col_fup_1 = document.createElement("div");
+    col_fup_1.className = "col s2";
+    row_fup.appendChild(col_fup_1);
   
+    var input_field_fup = document.createElement("div");
+    input_field_fup.className = "input-field col s8";
+    row_fup.appendChild(input_field_fup);
+
+    var textarea_fup = document.createElement("textarea");
+    textarea_fup.id = "followup-" + question_number + "-text";
+    textarea_fup.className = "materialize-textarea";
+    input_field_fup.appendChild(textarea_fup);
+  
+    var label_fup = document.createElement("label");
+    label_fup.setAttribute("for", "followup-" + question_number + "-text");
+    label_fup.innerHTML = "Followup Instructions:";
+    input_field_fup.appendChild(label_fup);
+
+    var col_fup_2 = document.createElement("div");
+    col_fup_2.className = "col s2";
+    row_fup.appendChild(col_fup_2);
+
     var row2 = document.createElement("div");
     row2.className = "row";
     question_block.appendChild(row2);
@@ -93,7 +141,7 @@ function loadQuestionnaire(questionnaire){
     model_box.value = questionnaire.model  !== undefined ? questionnaire.model  : chosen_model;
     chosen_model = model_box.value
     temperature_box.value = questionnaire.temperature  !== undefined ? questionnaire.temperature  : chosen_temperature;
-    chosen_temperature = temperature_box.value
+    chosen_temperature = parseFloat(temperature_box.value)
     // topic first
     topic.value = questionnaire.topic
     // context
@@ -107,7 +155,8 @@ function loadQuestionnaire(questionnaire){
         let question_block = createQuestionBlock(question_number);
         document.getElementById("questions").appendChild(question_block);
 
-        document.getElementById(`question-${question_number}-text`).value = questionnaire.questions[i].question_text
+        document.getElementById(`question-${question_number}-text`).value = questionnaire.questions[i].additional_instructions
+        document.getElementById(`followup-${question_number}-text`).value = questionnaire.questions[i].followup_instructions
         if(questionnaire.questions[i].n_follow_ups >= 0 & questionnaire.questions[i].n_follow_ups < 7){
             document.getElementById(`question-${question_number}-n_followups`).value = questionnaire.questions[i].n_follow_ups
         }
@@ -140,26 +189,6 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
-function getSelectIdAndValue(){
-	var selects = document.getElementsByClassName("question_block");
-	var id = select.id;
-	var value = select.value;
-	alert("id: " + id + " value: " + value);
-}
-
-function getTextareaIdAndValue(){
-	var textarea = document.getElementById("textarea");
-	var id = textarea.id;
-	var value = textarea.value;
-	alert("id: " + id + " value: " + value);
-}
-
-function getTextInputIdAndValue(){
-	var textInput = document.getElementById("textInput");
-	var id = textInput.id;
-	var value = textInput.value;
-	alert("id: " + id + " value: " + value);
-}
 
 const topic = document.getElementById('topic')
 const context = document.getElementById('context')
@@ -176,11 +205,13 @@ function getQuestionInfo(){
     questionnaire.questions = []
     for(let i=0;i<question_blocks.length;i++){
         j = i+1
-        let question_text = document.getElementById(`question-${j}-text`).value
+        let additional_instructions = document.getElementById(`question-${j}-text`).value
+        let followup_instructions = document.getElementById(`followup-${j}-text`).value
         let n_follow_ups = document.getElementById(`question-${j}-n_followups`).value
-        if( question_text.trim() != ""){
+        if( additional_instructions.trim() != ""){
             q_block = {}
-            q_block.question_text = question_text
+            q_block.additional_instructions = additional_instructions
+            q_block.followup_instructions = followup_instructions
             q_block.n_follow_ups = n_follow_ups
             questionnaire.questions.push(q_block)
         }
@@ -250,20 +281,20 @@ function createAIMessage(message) {
 
 
 function calculateCost(tokens){
-    return(tokens/1000*0.02)
+    return(tokens/1000*0.002)
 }
 
 async function generateCompletions(
         apiKey,
         org_key,
-        prompt,
+        messages,
         maxTokens = 120,
         topP = 1,
         frequencyPenalty = 0,
         presencePenalty = 0,
         stop = ['\n']
     ) {
-    const endpoint = "https://api.openai.com/v1/completions";
+    const endpoint = "https://api.openai.com/v1/chat/completions";
     const options = {
       method: "POST",
       headers: {
@@ -272,8 +303,8 @@ async function generateCompletions(
         "OpenAI-Organization": org_key,
       },
       body: JSON.stringify({
-        model: chosen_model,
-        prompt: prompt,
+        model: "gpt-3.5-turbo", //hardcoded cos f it
+        messages: messages,
         temperature: chosen_temperature,
         max_tokens: maxTokens,
         top_p: topP,
@@ -295,9 +326,9 @@ function constructPrompt(){
     let c = questionnaire.context
     let t = questionnaire.topic
     let conv = conversation.join("\n")
-    let question_text = questionnaire.questions[q_no-1].question_text
+    let additional_instructions = questionnaire.questions[q_no-1].additional_instructions
 
-    prompt_text = `${c}\n\n${question_text}\n\nHuman: Hi!\n${conv}\nAI:`
+    prompt_text = `${c}\n\n${additional_instructions}\n\nHuman: Hi!\n${conv}\nAI:`
     prompt_text = prompt_text.replace(/<TOPIC>/g, t)
     return(prompt_text)
 }
@@ -310,7 +341,11 @@ function newComment(comment){
             let prefix = "Human: "
             let chatlog = document.getElementById('chatlog')
             chatlog.prepend(new_message)
-            conversation.push(`${prefix}${comment.trim()}`)
+            if (follow_up_no == 0){
+                conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+            }else{
+                conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].followup_instructions}`})
+            }
             chatbox.value = ""
             chatlog.scrollTop = chatlog.scrollHeight;
             askAI().then(function(result){
@@ -334,7 +369,7 @@ function newAIComment(comment, fresh=false){
             chatlog.innerHTML = new_message
         }
         
-        conversation.push(`${prefix}${comment.trim()}`)
+        conversation.push({role: "assistant", content: `${comment.trim()}`})
         chatbox.value = ""
         chatlog.scrollTop = chatlog.scrollHeight;
     }
@@ -370,10 +405,10 @@ async function askAI(){
             follow_up_no = -1 // since we are starting again - question that has just been asked is original not follow up
         }
         // now, get the prompt
-        p = constructPrompt()
+        //p = constructPrompt()
         // here we would send it off to open ai and get the response
         // deal with things like <CONFUSION> here
-        r = generateCompletions(api_key,org_key, p)
+        r = generateCompletions(api_key,org_key, conversation)
         r_text = r.then(function(result){
             if('error' in result){
                 response_text = "error"
@@ -382,10 +417,10 @@ async function askAI(){
                 ai_turn = false
                 return(response_text)
             }else{
-                response_text = `${result.choices[0].text}`
+                response_text = `${result.choices[0].message.content}`
                 cost = calculateCost(result.usage.total_tokens)
                 conversation_cost = conversation_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
+                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
                 follow_up_no++
                 newAIComment(response_text)
                 ai_turn = false
@@ -410,24 +445,28 @@ async function clearConvo(){
     // keep track of conversation cost
     conversation_cost = 0
     survey_active = true
-    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
+    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
     return
 }
 
 function makeFirstComment(){
-    p = constructPrompt() + '👋 Hi there!'
+    ////p = constructPrompt() + '👋 Hi there!'
+    conversation = [
+        {role: 'system', content: questionnaire.context.replace(/<TOPIC>/g, questionnaire.topic)},
+    ]
+    conversation.push({role: "user", content: `User Response: None\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
     if(api_key.trim() != "" & org_key.trim() != ""){
-        r = generateCompletions(api_key,org_key, p)
+        r = generateCompletions(api_key,org_key, conversation)
         r.then(function(result){
             if('error' in result){
                 ai_turn = true
                 newAIComment("Please check your API key and Org Key in the config page - its possible you have entered it incorrectly.")
                 ai_turn = false
             }else{
-                response_text = `👋 Hi there! ${result.choices[0].text}`
+                response_text = `${result.choices[0].message.content}`
                 cost = calculateCost(result.usage.total_tokens)
                 conversation_cost = conversation_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
+                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
                 ai_turn = true
                 newAIComment(response_text)
                 ai_turn = false
@@ -445,26 +484,29 @@ function makeFirstComment(){
 }
 
 var chosen_temperature = 0.4;
-var chosen_model = "text-davinci-003";
+var chosen_model = "gpt-35-turbo";
 
-var model_choices = ["text-davinci-003", "text-curie-001"]
+var model_choices = ["gpt-35-turbo"]
 
 var questionnaire;
 
 var default_questionnaire = {
-    "topic":"sports drinks",
-    "context": "You are a helpful and super friendly AI designed by marketing professionals to get information from consumers in a natural, conversational manner. Be polite at all times, and thank them for their answers and time when appropriate. Act like they are a good friend of yours. Use lots of emojis to indicate emotional responses to what the human says to you.\n\nYou are interested in their opinions on <TOPIC>. You will ask follow up questions - but those follow up questions should be designed to get NEW information they haven't told you yet. Don't repeat questions you've already asked. You should ONLY reply with questions. Only ask one question at a time.",
+    "topic":"TOPIC",
+    "context": "PERSONA",
     "questions": [
         {
-            "question_text": "You must find out if they buy <TOPIC> regularly. Ask relevant follow up questions to get more information based on their replies. Only reply with questions.  Don't repeat previous questions. Only ask one question at a time.",
+            "additional_instructions": "INSTRUCTIONS FOR THE FIRST QUESTION IN BLOCK",
+            "followup_instructions": "FOLLOWUP INSTRUCTIONS DIFFER POTENTIALLY SO PUT THEM HERE",
             "n_follow_ups": "2"
         },
         {
-            "question_text": "You must ask them if a celebrity endorsement of a product would make them more likely to buy <TOPIC>. Ask relevant follow up questions to get more information about their answers - for example, what celebrity?  Only reply with questions. Don't repeat previous questions. Only ask one question at a time.",
+            "additional_instructions": "INSTRUCTIONS FOR THE FIRST QUESTION IN BLOCK",
+            "followup_instructions": "FOLLOWUP INSTRUCTIONS DIFFER POTENTIALLY SO PUT THEM HERE",
             "n_follow_ups": "1"
         },
         {
-            "question_text": "You must ask them how they felt about the conversation you just had with them on a scale from 1 to 10, 1 being bad, 10 being excellent. If they answer low, ask them what could be improved. If they answered high, ask them what they thought the survey did well. Don't repeat previous questions. Only ask one question at a time.",
+            "additional_instructions": "INSTRUCTIONS FOR THE FIRST QUESTION IN BLOCK",
+            "followup_instructions": "FOLLOWUP INSTRUCTIONS DIFFER POTENTIALLY SO PUT THEM HERE",
             "n_follow_ups": "1"
         }
     ]
@@ -476,28 +518,6 @@ if (localStorage.getItem("questionnaire") === null) {
 }else{
     questionnaire = JSON.parse(localStorage.getItem("questionnaire"))
 }
-  
-
-// create a conversation object. List of strings
-var conversation = []
-// keep track of question number + follow ups
-var q_no = 1
-var follow_up_no = 0
-var max_follow_up_no = 0
-// keep track of conversation cost
-var conversation_cost = 0
-
-// whose turn is it?
-var ai_turn = true
-// false once survey ends
-var survey_active = true
-
-var api_key = "";
-var org_key = "";
-
-var chatbox;
-var overlay;
-var p;
 
 var temperature_box = document.getElementById("temperature-choice")
 var model_box = document.getElementById("model-choice")
@@ -541,7 +561,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     })
 
     document.getElementById('download-convo-button').addEventListener('click', function(){
-        download("conversation.txt", conversation.join("\n"))
+        download("conversation.json", JSON.stringify(conversation))
     })
 
     document.getElementById('fileInput').addEventListener('change', handleFileSelect, false)
@@ -585,7 +605,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     //first comment in convo
     makeFirstComment()
     overlay.style.display = 'none'
-    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(3)}`
+    document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
     
 });
 
