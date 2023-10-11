@@ -4,7 +4,7 @@
 var conversation = []
 // keep track of question number + follow ups
 var q_no = 1
-var follow_up_no = 0
+var follow_up_no = -1
 console.log(follow_up_no)
 var max_follow_up_no = 0
 // keep track of conversation cost
@@ -341,96 +341,134 @@ function newComment(comment){
             let prefix = "Human: "
             let chatlog = document.getElementById('chatlog')
             chatlog.prepend(new_message)
-            if (follow_up_no == 0){
-                conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+            if(q_no <= questionnaire.questions.length){
+                if (follow_up_no == -1){
+                    conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+                }else{
+                    conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].followup_instructions}`})
+                }
             }else{
-                conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].followup_instructions}`})
+                conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: End of conversation.`})
             }
             chatbox.value = ""
             chatlog.scrollTop = chatlog.scrollHeight;
-            askAI().then(function(result){
-                newAIComment(result)
-                ai_turn = false
-                overlay.style.display = 'none'
-            })
+            ai_turn = true
+            askAI()
         }
     }
     
 }
 
 function newAIComment(comment, fresh=false){
-    if(ai_turn){
-        let new_message = createAIMessage(comment)
-        prefix = "AI: "
-        let chatlog = document.getElementById('chatlog')
-        if(!fresh){
-            chatlog.prepend(new_message)
-        }else{
-            chatlog.innerHTML = new_message
-        }
-        
-        conversation.push({role: "assistant", content: `${comment.trim()}`})
-        chatbox.value = ""
-        chatlog.scrollTop = chatlog.scrollHeight;
+    let new_message = createAIMessage(comment)
+    prefix = "AI: "
+    let chatlog = document.getElementById('chatlog')
+    if(!fresh){
+        chatlog.prepend(new_message)
+    }else{
+        chatlog.innerHTML = new_message
     }
+    
+    conversation.push({role: "assistant", content: `${comment.trim()}`})
+    chatbox.value = ""
+    chatlog.scrollTop = chatlog.scrollHeight;
+    ai_turn = false
+    
 }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function askAI(){
-    // we need to check if follow_up_no < max_follow_up_no. If its not, q_no++
-    console.log(q_no)
-    console.log(max_follow_up_no)
-    console.log(follow_up_no)
-    if(survey_active){
-        document.getElementById('chatbox').disabled = false
-        if(follow_up_no >= max_follow_up_no){
-            q_no++
-            // check q_no not greater than length of questions
+function askAI(){
+    // check if survey is active
+    ai_turn = true
+    if(api_key.trim() != "" & org_key.trim() != ""){
+        if(survey_active){
+            document.getElementById('chatbox').disabled = false
+            // check if questions are finished
             if(q_no > questionnaire.questions.length){
                 //we return
-                await sleep(1000)
+                sleep(1000)
                 document.getElementById('chatbox').disabled = true
                 goodbye_test = "Thats all the questions I have for you - thank you so much for your time! Bye 👋😊"
                 //conversation.push(goodbye_test)
                 survey_active = false
-                
-
+                newAIComment(goodbye_test)
+                document.getElementById('chatbox').disabled = true
+                overlay.style.display = 'none'
                 return(goodbye_test)
             }
-            // need a new max fups
-            max_follow_up_no = parseInt(questionnaire.questions[q_no-1].n_follow_ups)
-            follow_up_no = -1 // since we are starting again - question that has just been asked is original not follow up
-        }
-        // now, get the prompt
-        //p = constructPrompt()
-        // here we would send it off to open ai and get the response
-        // deal with things like <CONFUSION> here
-        r = generateCompletions(api_key,org_key, conversation)
-        r_text = r.then(function(result){
-            if('error' in result){
-                response_text = "error"
-                follow_up_no++
-                newAIComment(response_text)
-                ai_turn = false
-                return(response_text)
+            // we need to ask a questions
+            // is it the first question?
+            response_text = ""
+            if(conversation.length == 0){
+                conversation = [
+                    {role: 'system', content: questionnaire.context.replace(/<TOPIC>/g, questionnaire.topic)},
+                ]
+                console.log("first comment", q_no, max_follow_up_no, follow_up_no)
+                conversation.push({role: "user", content: `User Response: None\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+                // we need to ask the first question
+                //p = constructPrompt()
+                // here we would send it off to open ai and get the response
+                // deal with things like <CONFUSION> here
+                r = generateCompletions(api_key,org_key, conversation)
+                r_text = r.then(function(result){
+                    if('error' in result){
+                        response_text = "error"
+                        newAIComment(response_text)
+                        
+                    }else{
+                        response_text = `${result.choices[0].message.content}`
+                        cost = calculateCost(result.usage.total_tokens)
+                        conversation_cost = conversation_cost+cost
+                        document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
+                        newAIComment(response_text)
+                        
+                        overlay.style.display = 'none'
+                    }
+                })
             }else{
-                response_text = `${result.choices[0].message.content}`
-                cost = calculateCost(result.usage.total_tokens)
-                conversation_cost = conversation_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
-                follow_up_no++
-                newAIComment(response_text)
-                ai_turn = false
-                return(response_text)
+                // ask the next question - conversation is updated with user response by newcomment func already
+                r = generateCompletions(api_key,org_key, conversation)
+                r_text = r.then(function(result){
+                    if('error' in result){
+                        response_text = "error"
+                        newAIComment(response_text)
+                        
+                        overlay.style.display = 'none'
+                    }else{
+                        response_text = `${result.choices[0].message.content}`
+                        cost = calculateCost(result.usage.total_tokens)
+                        conversation_cost = conversation_cost+cost
+                        document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
+                        newAIComment(response_text)
+                        
+                        overlay.style.display = 'none'
+                    }
+                })
             }
-        })
+            // increment follow up number and q_no if necessary
+            follow_up_no++
+            console.log(q_no,questionnaire.questions.length, max_follow_up_no, follow_up_no)
+            if(follow_up_no >= max_follow_up_no){
+                console.log("incrementing q_no")
+                q_no++
+                follow_up_no = -1 // since we are starting again - next q is not a followup
+                if(q_no <= questionnaire.questions.length){
+                    max_follow_up_no = parseInt(questionnaire.questions[q_no-1].n_follow_ups)
+                }else{
+                    max_follow_up_no = 0
+                }
+            }
+            return(response_text)
+        }
+    }else{
+        ai_turn = true
+        response_text = "Please input your API key and Org Key in the config page before the chat can begin."
+        newAIComment(response_text)
         
-        
-        return(r_text)
-        
+        overlay.style.display = 'none'
     }
 }
 
@@ -440,47 +478,13 @@ async function clearConvo(){
     conversation = []
     // keep track of question number + follow ups
     q_no = 1
-    follow_up_no = 0
+    follow_up_no = -1
     max_follow_up_no = parseInt(questionnaire.questions[0].n_follow_ups)
     // keep track of conversation cost
     conversation_cost = 0
     survey_active = true
     document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
     return
-}
-
-function makeFirstComment(){
-    ////p = constructPrompt() + '👋 Hi there!'
-    conversation = [
-        {role: 'system', content: questionnaire.context.replace(/<TOPIC>/g, questionnaire.topic)},
-    ]
-    conversation.push({role: "user", content: `User Response: None\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
-    if(api_key.trim() != "" & org_key.trim() != ""){
-        r = generateCompletions(api_key,org_key, conversation)
-        r.then(function(result){
-            if('error' in result){
-                ai_turn = true
-                newAIComment("Please check your API key and Org Key in the config page - its possible you have entered it incorrectly.")
-                ai_turn = false
-            }else{
-                response_text = `${result.choices[0].message.content}`
-                cost = calculateCost(result.usage.total_tokens)
-                conversation_cost = conversation_cost+cost
-                document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
-                ai_turn = true
-                newAIComment(response_text)
-                ai_turn = false
-                //conversation.push(`AI: ${response_text}`)
-            }
-            
-        })
-    }else{
-        ai_turn = true
-        newAIComment("Please input your API key and Org Key in the config page before the chat can begin.")
-        ai_turn = false
-    }
-    //overlay.style.display = 'none'
-    
 }
 
 var chosen_temperature = 0.4;
@@ -548,9 +552,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
         questionnaire = getQuestionInfo()
         localStorage.setItem("questionnaire",JSON.stringify(questionnaire))
         clearConvo().then(function(){
-            makeFirstComment()
-            document.getElementById('chatbox').disabled = false
-            overlay.style.display = 'none'
+            askAI()
             instance.select('test-swipe-1')
         })
         
@@ -569,9 +571,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     document.getElementById("reset-button").addEventListener('click', function(){
         //reset the conversation with async to be sure about orders of stuff
         clearConvo().then(function(){
-            makeFirstComment()
-            document.getElementById('chatbox').disabled = false
-            overlay.style.display = 'none'
+            askAI()
         })
         
     })
@@ -603,8 +603,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     localStorage.setItem("questionnaire",JSON.stringify(questionnaire))
     max_follow_up_no = parseInt(questionnaire.questions[0].n_follow_ups)
     //first comment in convo
-    makeFirstComment()
-    overlay.style.display = 'none'
+    askAI()
     document.getElementById('costbox').innerHTML = `conversation cost: $${conversation_cost.toFixed(5)}`
     
 });
