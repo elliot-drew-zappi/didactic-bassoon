@@ -284,11 +284,36 @@ function calculateCost(tokens){
     return(tokens/1000*0.002)
 }
 
+function checkConversationWordLength(conversation){
+    //conersation is a list of dicts with role and content
+    // we need to check the length of the content for all assistant and user roles + the system role
+    // total words starts as length of the system content - first value in the conversation list
+    let total_words = conversation[0].content.split(" ").length
+    let old_total_words = conversation[0].content.split(" ").length
+    let max_words = 2800
+    let new_conversation = []
+    // need to loop through the converastion in reverse order
+    for(let i=conversation.length-1;i>=0;i--){
+        if(conversation[i].role == "assistant" | conversation[i].role == "user"){
+            total_words = total_words + conversation[i].content.split(" ").length
+            if(total_words <= max_words){
+                new_conversation.push(conversation[i])
+                old_total_words = total_words
+            }else{
+                break
+            }
+        }
+    }
+    new_conversation.push(conversation[0])
+    console.log(old_total_words, total_words)
+    return(new_conversation.reverse())
+}
+
 async function generateCompletions(
         apiKey,
         org_key,
         messages,
-        maxTokens = 120,
+        maxTokens = 250,
         topP = 1,
         frequencyPenalty = 0,
         presencePenalty = 0,
@@ -344,11 +369,14 @@ function newComment(comment){
             if(q_no <= questionnaire.questions.length){
                 if (follow_up_no == -1){
                     conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+                    conversation = checkConversationWordLength(conversation)
                 }else{
                     conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: ${questionnaire.questions[q_no-1].followup_instructions}`})
+                    conversation = checkConversationWordLength(conversation)
                 }
             }else{
                 conversation.push({role: "user", content: `User Response: ${comment.trim()}\nInstructions For Response: End of conversation.`})
+                conversation = checkConversationWordLength(conversation)
             }
             chatbox.value = ""
             chatlog.scrollTop = chatlog.scrollHeight;
@@ -370,6 +398,7 @@ function newAIComment(comment, fresh=false){
     }
     
     conversation.push({role: "assistant", content: `${comment.trim()}`})
+    conversation = checkConversationWordLength(conversation)
     chatbox.value = ""
     chatlog.scrollTop = chatlog.scrollHeight;
     ai_turn = false
@@ -408,6 +437,7 @@ function askAI(){
                 ]
                 console.log("first comment", q_no, max_follow_up_no, follow_up_no)
                 conversation.push({role: "user", content: `User Response: None\nInstructions For Response: ${questionnaire.questions[q_no-1].additional_instructions}`})
+                conversation = checkConversationWordLength(conversation)
                 // we need to ask the first question
                 //p = constructPrompt()
                 // here we would send it off to open ai and get the response
