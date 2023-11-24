@@ -328,7 +328,7 @@ async function generateCompletions(
         "OpenAI-Organization": org_key,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo", //hardcoded cos f it
+        model: "gpt-3.5-turbo-0301", //hardcoded cos f it
         messages: messages,
         temperature: chosen_temperature,
         max_tokens: maxTokens,
